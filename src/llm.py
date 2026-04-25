@@ -1,6 +1,6 @@
 """
-LLM client abstraction.
-Routes to Ollama (local, default) or AWS Bedrock (HIPAA BAA required).
+LLM client — routes to Ollama (local) or AWS Bedrock.
+Set WIKI_MOCK_LLM=1 in environment to return stub responses (useful for testing without Ollama).
 """
 from __future__ import annotations
 import os
@@ -8,64 +8,52 @@ import yaml
 from pathlib import Path
 
 
-def _load_settings() -> dict:
-    cfg_path = Path("config/settings.yaml")
-    if cfg_path.exists():
-        with cfg_path.open() as f:
-            return yaml.safe_load(f)
-    return {}
+def _cfg() -> dict:
+    p = Path("config/settings.yaml")
+    return yaml.safe_load(p.read_text()) if p.exists() else {}
 
 
 def call_llm(prompt: str, system: str = "") -> str:
-    """
-    Send a prompt to the configured LLM and return the response text.
-    All inference is local by default (Ollama). Zero network calls unless
-    Bedrock is explicitly enabled in config/settings.yaml.
-    """
-    cfg = _load_settings()
+    if os.getenv("WIKI_MOCK_LLM"):
+        return _mock_response(prompt)
+
+    cfg = _cfg()
     provider = cfg.get("llm", {}).get("provider", "ollama")
-
     if provider == "bedrock" and cfg.get("bedrock", {}).get("enabled", False):
-        return _call_bedrock(prompt, system, cfg)
-    return _call_ollama(prompt, system, cfg)
+        return _bedrock(prompt, system, cfg)
+    return _ollama(prompt, system, cfg)
 
 
-def _call_ollama(prompt: str, system: str, cfg: dict) -> str:
+def _ollama(prompt: str, system: str, cfg: dict) -> str:
     try:
         import ollama
     except ImportError:
-        raise RuntimeError("pip install ollama  — then: ollama pull llama3.2")
-
+        raise RuntimeError(
+            "Run: pip install ollama\n"
+            "Then: ollama pull llama3.2\n"
+            "Docs: https://ollama.com"
+        )
     model = cfg.get("llm", {}).get("model", "llama3.2")
-    base_url = cfg.get("llm", {}).get("base_url", "http://localhost:11434")
-    temp = cfg.get("llm", {}).get("temperature", 0.1)
-
-    client = ollama.Client(host=base_url)
-    messages = []
+    host  = cfg.get("llm", {}).get("base_url", "http://localhost:11434")
+    temp  = cfg.get("llm", {}).get("temperature", 0.1)
+    msgs  = []
     if system:
-        messages.append({"role": "system", "content": system})
-    messages.append({"role": "user", "content": prompt})
-
-    response = client.chat(
-        model=model,
-        messages=messages,
-        options={"temperature": temp},
-    )
-    return response["message"]["content"]
-
-
-def _call_bedrock(prompt: str, system: str, cfg: dict) -> str:
-    """AWS Bedrock — only use if you have a signed HIPAA BAA with AWS."""
+        msgs.append({"role": "system", "content": system})
+    msgs.append({"role": "user", "content": prompt})
     try:
-        import boto3, json
-    except ImportError:
-        raise RuntimeError("pip install boto3")
+        r = ollama.Client(host=host).chat(
+            model=model, messages=msgs, options={"temperature": temp}
+        )
+        return r["message"]["content"]
+    except Exception as e:
+        raise RuntimeError(f"Ollama error: {e}\nIs Ollama running? Try: ollama serve") from e
 
-    bedrock_cfg = cfg.get("bedrock", {})
-    region = bedrock_cfg.get("region", "us-east-1")
-    model_id = bedrock_cfg.get("model_id", "anthropic.claude-3-5-sonnet-20241022-v2:0")
 
-    client = boto3.client("bedrock-runtime", region_name=region)
+def _bedrock(prompt: str, system: str, cfg: dict) -> str:
+    """Only use with a signed AWS HIPAA BAA."""
+    import boto3, json
+    bc  = cfg.get("bedrock", {})
+    client = boto3.client("bedrock-runtime", region_name=bc.get("region", "us-east-1"))
     body = {
         "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": cfg.get("llm", {}).get("max_tokens", 4096),
@@ -74,7 +62,22 @@ def _call_bedrock(prompt: str, system: str, cfg: dict) -> str:
     }
     if system:
         body["system"] = system
+    r = client.invoke_model(modelId=bc.get("model_id"), body=json.dumps(body))
+    return json.loads(r["body"].read())["content"][0]["text"]
 
-    response = client.invoke_model(modelId=model_id, body=json.dumps(body))
-    result = json.loads(response["body"].read())
-    return result["content"][0]["text"]
+
+def _mock_response(prompt: str) -> str:
+    """Stub used in tests / CI — no Ollama needed."""
+    return """```wiki:patient_overview.md
+---
+patient_id: PT-TEST
+last_updated: 2026-01-01
+---
+## Summary
+Mock patient for testing.
+```
+```wiki:visit_notes_index.md
+| Date | Document | Summary |
+|------|----------|---------|
+| 2026-01-01 | test.txt | Mock ingest |
+```"""
