@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: hipaa-llm-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    restart: unless-stopped
+
+  wiki:
+    build: .
+    container_name: hipaa-llm-wiki
+    volumes:
+      - ./raw:/app/raw
+      - ./wiki:/app/wiki
+      - ./logs:/app/logs
+      - ./config:/app/config
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - ollama
+    network_mode: none
+
+volumes:
+  ollama_models:
