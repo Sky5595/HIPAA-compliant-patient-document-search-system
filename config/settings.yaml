@@ -1,0 +1,43 @@
+# HIPAA-LLM-Wiki Settings
+# All processing is LOCAL — no data leaves your machine
+
+llm:
+  provider: ollama                    # "ollama" (local) | "bedrock" (AWS HIPAA BAA)
+  model: llama3.2                     # or mistral, phi3, medllama2
+  base_url: http://localhost:11434
+  temperature: 0.1                    # low for clinical accuracy
+  max_tokens: 4096
+
+# AWS Bedrock (only if you have a HIPAA BAA with AWS)
+bedrock:
+  region: us-east-1
+  model_id: anthropic.claude-3-5-sonnet-20241022-v2:0
+  enabled: false
+
+paths:
+  raw_dir: raw
+  wiki_dir: wiki
+  logs_dir: logs
+  index_file: index.md
+  log_file: logs/log.md
+  audit_file: logs/audit.jsonl
+
+ocr:
+  engine: pdfplumber                  # pdfplumber (native PDF) | tesseract (scanned)
+  fallback_to_tesseract: true
+  tesseract_lang: eng
+  dpi: 300
+
+search:
+  engine: bm25                        # bm25 | hybrid (bm25 + embeddings)
+  top_k: 10
+
+audit:
+  enabled: true
+  format: jsonl                       # append-only JSON Lines
+  include_query_text: false           # set false to minimize PHI in logs
+
+hipaa:
+  phi_fields: [name, dob, ssn, mrn, address, phone, email, ip_address]
+  deidentify_on_log: true
+  session_timeout_minutes: 30

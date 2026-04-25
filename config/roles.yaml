@@ -1,0 +1,55 @@
+# Role-Based Access Control
+# Defines which roles can read/write which wiki pages
+# Users are added at runtime via: python main.py users add
+
+roles:
+  physician:
+    description: Attending or treating physician
+    permissions:
+      - read:all
+      - write:wiki
+      - query:all
+      - lint:run
+      - ingest:all
+    patient_scope: assigned_only      # can only access their assigned patients
+
+  nurse:
+    description: Registered nurse or care coordinator
+    permissions:
+      - read:all
+      - query:all
+      - ingest:vitals_labs
+    patient_scope: assigned_only
+
+  admin:
+    description: Health information administrator
+    permissions:
+      - read:audit_log
+      - read:index
+      - manage:users
+      - lint:run
+    patient_scope: none               # no clinical content access
+
+  readonly:
+    description: Read-only observer (e.g., auditor, researcher with IRB)
+    permissions:
+      - read:wiki
+      - query:all
+    patient_scope: deidentified_only
+
+# Users — add real users here or manage via CLI
+users:
+  - username: dr_smith
+    role: physician
+    assigned_patients: [PT-0001, PT-0002]
+    active: true
+
+  - username: nurse_jones
+    role: nurse
+    assigned_patients: [PT-0001]
+    active: true
+
+  - username: hia_admin
+    role: admin
+    assigned_patients: []
+    active: true

@@ -1,0 +1,35 @@
+DISCHARGE SUMMARY — DE-IDENTIFIED SAMPLE
+Patient ID: PT-0001
+Visit Date: 2025-11-14
+Provider: Dr. Sample, MD — Cardiology
+Facility: Sample General Hospital
+
+DIAGNOSES:
+- Heart Failure with Reduced Ejection Fraction (HFrEF) — ICD-10: I50.20
+- Type 2 Diabetes Mellitus, uncontrolled — ICD-10: E11.65
+- Chronic Kidney Disease, Stage 3a — ICD-10: N18.31
+
+MEDICATIONS AT DISCHARGE:
+- Carvedilol 6.25mg BID (new — heart failure)
+- Furosemide 40mg daily (new — fluid overload)
+- Metformin 500mg BID (continue — diabetes)
+- Lisinopril 5mg daily (continue — CKD/HTN)
+
+ALLERGIES ON FILE:
+- Penicillin: hives (moderate)
+- Sulfonamides: anaphylaxis (SEVERE)
+
+LABS AT DISCHARGE:
+- eGFR: 48 mL/min/1.73m2 (down from 54 three months ago)
+- HbA1c: 9.1% (target <7%)
+- BNP: 380 pg/mL (down from 820 on admission)
+- Potassium: 4.2 mEq/L (WNL)
+
+FOLLOW-UP ORDERS:
+- Nephrology consult within 4 weeks (CKD progression)
+- Repeat BMP in 2 weeks (monitor K+ on Lisinopril + Furosemide)
+- Cardiology follow-up in 6 weeks
+- Diabetes educator referral
+
+NOTE: Furosemide is a sulfonamide-derived diuretic. Given patient's
+SEVERE sulfonamide allergy — review with pharmacy before discharge.
